@@ -17,9 +17,9 @@ function App() {
       const data = await res.json();
       setResult(data.result);
 
-      // Add to history (keep only last 5)
+      
       setHistory((prev) => [data, ...prev].slice(0, 5));
-      setInput(""); // clear input
+      setInput(""); 
     } catch (err) {
       setResult("Error: " + err.message);
     }
