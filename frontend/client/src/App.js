@@ -10,7 +10,7 @@ export default function CyberThreatDetector() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Validation regex
+  // Validation
   const urlRegex = /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i;
   const hashRegex = /^[a-f0-9]{32}$|^[a-f0-9]{40}$|^[a-f0-9]{64}$/i;
   const ipRegex = /^\d{1,3}(\.\d{1,3}){3}$/;
@@ -24,7 +24,7 @@ export default function CyberThreatDetector() {
     return "invalid";
   };
 
-  // Fallback local check
+  // local check
   const localThreatCheck = (value) => {
     const unsafeList = ["malware.com", "phishing-site.com", "hackme.org", "bad-site.com", "example-badsite.com"];
     const suspiciousList = ["test-virus.net", "unknown.io"];
@@ -58,7 +58,7 @@ export default function CyberThreatDetector() {
       const demoResult = localThreatCheck(scannedInput);
       setResult(demoResult);
 
-      // Update local history
+      // Updating local history
       setHistory((prev) => {
         const newEntry = { input: scannedInput, status: demoResult?.status, result: demoResult };
         const filtered = prev.filter((h) => h.input.toLowerCase() !== scannedInput.toLowerCase());

@@ -14,7 +14,7 @@ app.use(
   })
 );
 
-// Check env
+//check env
 if (!process.env.VT_API_KEY || !process.env.ABUSEIPDB_KEY || !process.env.MONGO_URL) {
   console.error("❌ Missing required environment variables (.env)");
   process.exit(1);
@@ -26,7 +26,7 @@ mongoose
   .then(() => console.log("✅ MongoDB connected successfully"))
   .catch((err) => console.error("❌ MongoDB connection error:", err.message));
 
-// 🔹 Schema for scan history
+// Schema for scan history
 const scanSchema = new mongoose.Schema({
   input: String,
   status: String,
@@ -49,7 +49,7 @@ function getStatus(malicious, abuseScore = 0) {
   return "✅ No threat found";
 }
 
-// 🔹 Local threat check
+// Local threat check
 function localThreatCheck(input) {
   const unsafeList = ["malware.com", "phishing-site.com", "hackme.org"];
   const suspiciousList = ["test-virus.net", "unknown.io"];
@@ -104,7 +104,7 @@ async function checkVirusTotalHash(hash) {
   }
 }
 
-// 🔹 Scan route
+// Scan route
 app.post("/api/scan", async (req, res) => {
   const { input } = req.body;
   if (!input) return res.status(400).json({ message: "No input provided" });
@@ -151,7 +151,7 @@ app.post("/api/scan", async (req, res) => {
       }
     }
 
-    // Merge local check if API result exists
+// Merge local check if API result exists
     const localResult = localThreatCheck(input);
     if (result) {
       result.total_engines += localResult.total_engines;
@@ -161,7 +161,7 @@ app.post("/api/scan", async (req, res) => {
         result.threatType = localResult.threatType;
       }
     } else {
-      // fallback entirely to local check
+// fallback entirely to local check
       result = localResult;
     }
 
@@ -173,7 +173,7 @@ app.post("/api/scan", async (req, res) => {
   }
 });
 
-// 🔹 History
+// Historyyyy
 app.get("/api/history", async (req, res) => {
   try {
     const scans = await Scan.find().sort({ date: -1 }).limit(5);
