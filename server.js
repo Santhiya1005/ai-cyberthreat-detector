@@ -54,9 +54,10 @@ function localThreatCheck(input) {
 
   if (found) {
     return {
+      input,
       status: "🚨 High Threat!",
       stats: { malicious: 5 },
-      total_engines: 5,
+      total_engines: 1,
       threatType:
         found.type === "hash"
           ? "Malware"
@@ -68,9 +69,10 @@ function localThreatCheck(input) {
   }
 
   return {
+    input,
     status: "✅ No threat found",
     stats: { malicious: 0 },
-    total_engines: 5,
+    total_engines: 1,
     threatType: "Safe",
     detectedBy: ["LocalDB"],
   };
@@ -89,7 +91,7 @@ async function checkAbuseIPDB(ip) {
   }
 }
 
-// VirusTotal
+// VirusTotal - URL
 async function checkVirusTotalURL(url) {
   try {
     await axios.post(
@@ -102,26 +104,64 @@ async function checkVirusTotalURL(url) {
         },
       }
     );
+
     const urlId = Buffer.from(url)
       .toString("base64")
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
       .replace(/=+$/, "");
-    const vtResult = await axios.get(`https://www.virustotal.com/api/v3/urls/${urlId}`, {
-      headers: { "x-apikey": process.env.VT_API_KEY },
-    });
-    return vtResult.data.data?.attributes?.last_analysis_stats || null;
+
+    const vtResult = await axios.get(
+      `https://www.virustotal.com/api/v3/urls/${urlId}`,
+      { headers: { "x-apikey": process.env.VT_API_KEY } }
+    );
+
+    const attributes = vtResult.data.data?.attributes;
+    if (!attributes) return null;
+
+    const stats = attributes.last_analysis_stats || {};
+    const analysisResults = attributes.last_analysis_results || {};
+
+    const detectedBy = Object.entries(analysisResults)
+      .filter(([ , result]) =>
+        result.category === "malicious" || result.category === "suspicious"
+      )
+      .map(([engine]) => engine);
+
+    return {
+      stats,
+      detectedBy: detectedBy.length > 0 ? detectedBy : ["VirusTotal"]
+    };
   } catch {
     return null;
   }
 }
 
+// VirusTotal - File Hash
 async function checkVirusTotalHash(hash) {
   try {
-    const vtResult = await axios.get(`https://www.virustotal.com/api/v3/files/${hash}`, {
-      headers: { "x-apikey": process.env.VT_API_KEY },
-    });
-    return vtResult.data.data?.attributes?.last_analysis_stats || null;
+    const vtResult = await axios.get(
+      `https://www.virustotal.com/api/v3/files/${hash}`,
+      { headers: { "x-apikey": process.env.VT_API_KEY } }
+    );
+
+    const attributes = vtResult.data.data?.attributes;
+    if (!attributes) return null;
+
+    const stats = attributes.last_analysis_stats || {};
+    const analysisResults = attributes.last_analysis_results || {};
+
+    const detectedBy = Object.entries(analysisResults)
+      .filter(
+        ([, result]) =>
+          result.category === "malicious" || result.category === "suspicious"
+      )
+      .map(([engine]) => engine);
+
+    return {
+      stats,
+      detectedBy: detectedBy.length > 0 ? detectedBy : ["VirusTotal"]
+    };
   } catch {
     return null;
   }
@@ -135,54 +175,58 @@ app.post("/api/scan", async (req, res) => {
   let result = null;
 
   try {
-    // 1️⃣ Check API first
+    // 1️⃣ API checks
     if (isIP(input)) {
       const abuseResult = await checkAbuseIPDB(input);
       const score = abuseResult?.abuseConfidenceScore || 0;
       if (score > 0) {
         result = {
-          input,
-          status: getStatus(0, score),
-          stats: { abuseConfidenceScore: score },
-          total_engines: 1,
-          threatType: score > 50 ? "High Risk IP" : "Suspicious IP",
-          detectedBy: ["AbuseIPDB"],
-        };
+  input,
+  status: getStatus(malicious),
+  stats: vt.stats,
+  total_engines: Object.values(vt.stats).reduce((a, b) => a + b, 0),
+  threatType: malicious > 0 ? "Malware" : "Safe",
+  detectedBy: vt.detectedBy,
+};
+
       }
     } else if (input.startsWith("http")) {
-      const vtStats = await checkVirusTotalURL(input);
-      if (vtStats) {
-        const malicious = vtStats.malicious || 0;
+      const vt = await checkVirusTotalURL(input);
+      if (vt) {
+        const malicious = vt.stats.malicious || 0;
         result = {
           input,
           status: getStatus(malicious),
-          stats: vtStats,
-          total_engines: Object.values(vtStats).reduce((a, b) => a + b, 0),
+          stats: vt.stats,
+          total_engines: Object.values(vt.stats).reduce((a, b) => a + b, 0),
           threatType: malicious > 0 ? "Malware" : "Safe",
-          detectedBy: Object.keys(vtStats).filter((k) => vtStats[k] > 0),
+          detectedBy: vt.detectedBy,
         };
       }
     } else {
-      const vtStats = await checkVirusTotalHash(input);
-      if (vtStats) {
-        const malicious = vtStats.malicious || 0;
+      const vt = await checkVirusTotalHash(input);
+      if (vt) {
+        const malicious = vt.stats.malicious || 0;
         result = {
           input,
           status: getStatus(malicious),
-          stats: vtStats,
-          total_engines: Object.values(vtStats).reduce((a, b) => a + b, 0),
+          stats: vt.stats,
+          total_engines: Object.values(vt.stats).reduce((a, b) => a + b, 0),
           threatType: malicious > 0 ? "Malware" : "Safe",
-          detectedBy: Object.keys(vtStats).filter((k) => vtStats[k] > 0),
+          detectedBy: vt.detectedBy,
         };
       }
     }
 
-    // 2️⃣ If API result not high threat, merge local dataset
+    // 2️⃣ Merge LocalDB with result
     const localResult = localThreatCheck(input);
     if (result) {
       result.total_engines += localResult.total_engines;
       result.detectedBy = [...new Set([...result.detectedBy, ...localResult.detectedBy])];
-      if (result.status.includes("No threat") && !localResult.status.includes("No threat")) {
+      if (
+        result.status.includes("No threat") &&
+        !localResult.status.includes("No threat")
+      ) {
         result.status = localResult.status;
         result.threatType = localResult.threatType;
       }
@@ -190,6 +234,7 @@ app.post("/api/scan", async (req, res) => {
       result = localResult;
     }
 
+    // Save in DB
     await Scan.create(result);
     res.json(result);
   } catch (err) {
@@ -198,7 +243,7 @@ app.post("/api/scan", async (req, res) => {
   }
 });
 
-// History
+// History route
 app.get("/api/history", async (req, res) => {
   try {
     const scans = await Scan.find().sort({ date: -1 }).limit(5);
