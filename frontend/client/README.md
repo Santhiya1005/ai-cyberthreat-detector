@@ -1,70 +1,71 @@
-# Getting Started with Create React App
+## AI Cyber Threat Detector
+🛡️ Project Overview
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+The AI Cyber Threat Detector is a full-stack application that detects malicious URLs, IPs, and file hashes. It combines:
 
-## Available Scripts
+* External threat databases (VirusTotal, AbuseIPDB)
+* Local database (custom threat dataset)
+* AI Model (predicts phishing/malware/benign)
 
-In the project directory, you can run:
+This hybrid approach ensures detection of both known and new threats.
 
-### `npm start`
+⚡ Features
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+* Scan URLs, IP addresses, and file hashes for threats.
+* AI model predicts threats even when external databases have no reports.
+* History of scans stored locally in the browser.
+* Combined verdicts from External APIs + LocalDB + AI.
+* Simple, responsive frontend for ease of use.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+🛠️ Tech Stack
 
-### `npm test`
+Frontend: React.js
+Backend: Node.js + Express
+AI Model: Python + FastAPI + scikit-learn
+Database: MongoDB
+External APIs: VirusTotal, AbuseIPDB
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+📁 Folder Structure
+ai-cyberthreat-detector/
+│── backend/         # Node.js API
+│── ai/              # FastAPI AI model
+│── frontend/        # React app
+│── .env.example     # Sample environment variables
+│── README.md
 
-### `npm run build`
+🚀 Setup & Run Instructions
+1️⃣ Backend (Node.js + Express)
+cd backend
+npm install
+npm start
+Server runs at: http://localhost:4000
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+2️⃣ AI Backend (FastAPI)
+cd ai
+pip install -r requirements.txt
+uvicorn api:app --reload --port 8000
+AI endpoint: http://127.0.0.1:8000/predict
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+3️⃣ Frontend (React)
+cd frontend
+npm install
+npm run dev
+Frontend runs at: http://localhost:5173
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+🧪 Testing Examples
 
-### `npm run eject`
+✅ Safe URL: https://www.google.com
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+🚨 Malware file hash: http://www.eicar.org/download/eicar.com
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+⚠️ Suspicious IP: 34.174.232.228
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+🔐 Notes
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+* Make sure to set your API keys in .env (VirusTotal, AbuseIPDB).
+* The AI model is currently a basic prototype. Retraining with more data improves accuracy.
+* For production deployment, consider authentication, scaling, and hiding sensitive keys.
 
-## Learn More
+👩‍💻 Author
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Santhiya S. – Full-Stack Developer & AI Enthusiast

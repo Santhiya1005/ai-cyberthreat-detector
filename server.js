@@ -10,19 +10,25 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: "*" }));
 
-// Env check
+// -------------------------------
+// 🔹 Environment variable check
+// -------------------------------
 if (!process.env.VT_API_KEY || !process.env.ABUSEIPDB_KEY || !process.env.MONGO_URL) {
   console.error("❌ Missing required environment variables (.env)");
   process.exit(1);
 }
 
-// MongoDB connection
+// -------------------------------
+// 🔹 MongoDB connection
+// -------------------------------
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB error:", err.message));
 
-// Schema
+// -------------------------------
+// 🔹 Schema & Model
+// -------------------------------
 const scanSchema = new mongoose.Schema({
   input: String,
   status: String,
@@ -34,12 +40,20 @@ const scanSchema = new mongoose.Schema({
 });
 const Scan = mongoose.model("Scan", scanSchema);
 
-// Load local dataset
+// -------------------------------
+// 🔹 Local dataset
+// -------------------------------
 const maliciousData = require(path.join(__dirname, "malicious.json"));
 
-// Helpers
+// -------------------------------
+// 🔹 Helpers
+// -------------------------------
 function isIP(input) {
   return net.isIP(input) !== 0;
+}
+
+function isHash(input) {
+  return /^[a-fA-F0-9]{32,64}$/.test(input);
 }
 
 function getStatus(maliciousCount = 0, abuseScore = 0) {
@@ -78,7 +92,9 @@ function localThreatCheck(input) {
   };
 }
 
-// AbuseIPDB
+// -------------------------------
+// 🔹 AbuseIPDB
+// -------------------------------
 async function checkAbuseIPDB(ip) {
   try {
     const response = await axios.get("https://api.abuseipdb.com/api/v2/check", {
@@ -91,19 +107,17 @@ async function checkAbuseIPDB(ip) {
   }
 }
 
-// VirusTotal - URL
+// -------------------------------
+// 🔹 VirusTotal URL
+// -------------------------------
 async function checkVirusTotalURL(url) {
   try {
-    await axios.post(
-      "https://www.virustotal.com/api/v3/urls",
-      `url=${url}`,
-      {
-        headers: {
-          "x-apikey": process.env.VT_API_KEY,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
+    await axios.post("https://www.virustotal.com/api/v3/urls", `url=${url}`, {
+      headers: {
+        "x-apikey": process.env.VT_API_KEY,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    });
 
     const urlId = Buffer.from(url)
       .toString("base64")
@@ -123,21 +137,24 @@ async function checkVirusTotalURL(url) {
     const analysisResults = attributes.last_analysis_results || {};
 
     const detectedBy = Object.entries(analysisResults)
-      .filter(([ , result]) =>
-        result.category === "malicious" || result.category === "suspicious"
+      .filter(
+        ([, result]) =>
+          result.category === "malicious" || result.category === "suspicious"
       )
       .map(([engine]) => engine);
 
     return {
       stats,
-      detectedBy: detectedBy.length > 0 ? detectedBy : ["VirusTotal"]
+      detectedBy: detectedBy.length > 0 ? detectedBy : ["VirusTotal"],
     };
   } catch {
     return null;
   }
 }
 
-// VirusTotal - File Hash
+// -------------------------------
+// 🔹 VirusTotal Hash
+// -------------------------------
 async function checkVirusTotalHash(hash) {
   try {
     const vtResult = await axios.get(
@@ -160,14 +177,29 @@ async function checkVirusTotalHash(hash) {
 
     return {
       stats,
-      detectedBy: detectedBy.length > 0 ? detectedBy : ["VirusTotal"]
+      detectedBy: detectedBy.length > 0 ? detectedBy : ["VirusTotal"],
     };
   } catch {
     return null;
   }
 }
 
-// Scan route
+// -------------------------------
+// 🔹 AI Integration (FastAPI)
+// -------------------------------
+async function checkAI(url) {
+  try {
+    const res = await axios.post("http://127.0.0.1:8000/predict", { url });
+    return res.data; // { url: "http...", prediction: "phishing" }
+  } catch (err) {
+    console.error("❌ AI error:", err.message);
+    return null;
+  }
+}
+
+// -------------------------------
+// 🔹 Scan Route
+// -------------------------------
 app.post("/api/scan", async (req, res) => {
   const { input } = req.body;
   if (!input) return res.status(400).json({ message: "No input provided" });
@@ -175,20 +207,19 @@ app.post("/api/scan", async (req, res) => {
   let result = null;
 
   try {
-    // 1️⃣ API checks
+    // 1️⃣ External API checks
     if (isIP(input)) {
       const abuseResult = await checkAbuseIPDB(input);
       const score = abuseResult?.abuseConfidenceScore || 0;
       if (score > 0) {
         result = {
-  input,
-  status: getStatus(malicious),
-  stats: vt.stats,
-  total_engines: Object.values(vt.stats).reduce((a, b) => a + b, 0),
-  threatType: malicious > 0 ? "Malware" : "Safe",
-  detectedBy: vt.detectedBy,
-};
-
+          input,
+          status: getStatus(0, score),
+          stats: { malicious: score },
+          total_engines: 1,
+          threatType: "High Risk IP",
+          detectedBy: ["AbuseIPDB"],
+        };
       }
     } else if (input.startsWith("http")) {
       const vt = await checkVirusTotalURL(input);
@@ -203,7 +234,7 @@ app.post("/api/scan", async (req, res) => {
           detectedBy: vt.detectedBy,
         };
       }
-    } else {
+    } else if (isHash(input)) {
       const vt = await checkVirusTotalHash(input);
       if (vt) {
         const malicious = vt.stats.malicious || 0;
@@ -218,15 +249,12 @@ app.post("/api/scan", async (req, res) => {
       }
     }
 
-    // 2️⃣ Merge LocalDB with result
+    // 2️⃣ Merge LocalDB
     const localResult = localThreatCheck(input);
     if (result) {
       result.total_engines += localResult.total_engines;
       result.detectedBy = [...new Set([...result.detectedBy, ...localResult.detectedBy])];
-      if (
-        result.status.includes("No threat") &&
-        !localResult.status.includes("No threat")
-      ) {
+      if (result.status.includes("No threat") && !localResult.status.includes("No threat")) {
         result.status = localResult.status;
         result.threatType = localResult.threatType;
       }
@@ -234,16 +262,27 @@ app.post("/api/scan", async (req, res) => {
       result = localResult;
     }
 
+    // 3️⃣ AI Prediction (URLs only)
+    if (input.startsWith("http")) {
+      const aiResult = await checkAI(input);
+      if (aiResult?.prediction) {
+        result.threatType = aiResult.prediction; // overwrite with AI prediction
+        result.detectedBy.push("AI Model");
+      }
+    }
+
     // Save in DB
     await Scan.create(result);
     res.json(result);
   } catch (err) {
-    console.error("Scan error:", err.message);
+    console.error("❌ Scan error:", err.message);
     res.json(localThreatCheck(input));
   }
 });
 
-// History route
+// -------------------------------
+// 🔹 History Route
+// -------------------------------
 app.get("/api/history", async (req, res) => {
   try {
     const scans = await Scan.find().sort({ date: -1 }).limit(5);
@@ -253,5 +292,8 @@ app.get("/api/history", async (req, res) => {
   }
 });
 
+// -------------------------------
+// 🔹 Server
+// -------------------------------
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
