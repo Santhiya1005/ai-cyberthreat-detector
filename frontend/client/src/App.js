@@ -7,7 +7,7 @@ import {
   ShieldX,
   History,
 } from "lucide-react";
-import 'bootstrap/dist/css/bootstrap.min.css';
+import "bootstrap/dist/css/bootstrap.min.css";
 
 // Regex validators
 const urlRegex = /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i;
@@ -94,8 +94,10 @@ export default function CyberThreatDetector() {
     const s = status.toLowerCase();
     if (s.includes("malicious") || s.includes("high") || s.includes("danger"))
       return <ShieldX className="text-danger me-2" />;
-    if (s.includes("suspicious")) return <Shield className="text-warning me-2" />;
-    if (s.includes("benign") || s.includes("no")) return <ShieldCheck className="text-success me-2" />;
+    if (s.includes("suspicious"))
+      return <Shield className="text-warning me-2" />;
+    if (s.includes("benign") || s.includes("no"))
+      return <ShieldCheck className="text-success me-2" />;
     return <ShieldAlert className="me-2" />;
   };
 
@@ -108,8 +110,18 @@ export default function CyberThreatDetector() {
   };
 
   return (
-    <div className="container py-5 bg-light min-vh-100">
-      <h1 className="text-center text-danger mb-5 fw-bold">⚡ CyberThreat Detector</h1>
+    <div
+      className="container-fluid min-vh-100 py-4"
+    >
+        {/* App Header */}
+<div className="text-center mb-5">
+  <h1 className="fw-bold text-danger py-3">
+    ⚡ CyberThreat Detector
+  </h1>
+</div>
+
+
+
 
       {/* Input */}
       <div className="card mb-4 shadow-sm">
@@ -130,7 +142,10 @@ export default function CyberThreatDetector() {
               onClick={handleScan}
             >
               {loading ? (
-                <div className="spinner-border spinner-border-sm me-2" role="status">
+                <div
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                >
                   <span className="visually-hidden">Loading...</span>
                 </div>
               ) : null}
@@ -155,7 +170,11 @@ export default function CyberThreatDetector() {
                   </tr>
                   <tr>
                     <td className="fw-bold">Status</td>
-                    <td className={`d-flex align-items-center ${getStatusClass(result.status)}`}>
+                    <td
+                      className={`d-flex align-items-center ${getStatusClass(
+                        result.status
+                      )}`}
+                    >
                       {getStatusIcon(result.status)}
                       {result.status ?? "Unknown"}
                     </td>
@@ -163,8 +182,13 @@ export default function CyberThreatDetector() {
                   <tr>
                     <td className="fw-bold">AI Prediction</td>
                     <td>
-                      <span className={`badge ${getBadgeClass(result.aiPrediction ?? getAIPrediction(result.status))}`}>
-                        🧠 {result.aiPrediction ?? getAIPrediction(result.status)}
+                      <span
+                        className={`badge ${getBadgeClass(
+                          result.aiPrediction ?? getAIPrediction(result.status)
+                        )}`}
+                      >
+                        🧠{" "}
+                        {result.aiPrediction ?? getAIPrediction(result.status)}
                       </span>
                     </td>
                   </tr>
@@ -173,11 +197,15 @@ export default function CyberThreatDetector() {
                     <td>
                       {result.detectedBy?.length > 0 ? (
                         <ul className="mb-0 ps-3">
-                          {[...new Set(result.detectedBy)].sort().map((engine, i) => (
-                            <li key={i}>{engine}</li>
-                          ))}
+                          {[...new Set(result.detectedBy)]
+                            .sort()
+                            .map((engine, i) => (
+                              <li key={i}>{engine}</li>
+                            ))}
                         </ul>
-                      ) : "LocalDB"}
+                      ) : (
+                        "LocalDB"
+                      )}
                     </td>
                   </tr>
                 </tbody>
@@ -196,54 +224,73 @@ export default function CyberThreatDetector() {
           {history.length === 0 ? (
             <p className="text-secondary">No history found</p>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-bordered table-hover align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th>Input</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>AI Prediction</th>
-                    <th>Detected By</th>
-                    <th>Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((h, i) => (
-                   <tr
-  key={i}
-  onClick={() => setResult(h)}
-  className={`${i % 2 === 0 ? "bg-light" : ""} ${result?.input === h.input ? "table-active" : ""}`}
-  style={{ cursor: "pointer" }}
->
+           <div className="table-responsive">
+  <table className="table table-bordered table-hover align-middle">
+    <thead className="table-light">
+      <tr>
+        <th>Input</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>AI Prediction</th>
+        <th>Detected By</th>
+        <th>Time</th>
+      </tr>
+    </thead>
+    <tbody>
+      {history.map((h, i) => (
+        <tr
+          key={i}
+          onClick={() => setResult(h)}
+          className={`${i % 2 === 0 ? "bg-light" : ""} ${
+            result?.input === h.input ? "table-active" : ""
+          }`}
+          style={{ cursor: "pointer" }}
+        >
+          <td>{h.input}</td>
+          <td className="text-capitalize">{inputType(h.input)}</td>
+          <td className={`d-flex align-items-center ${getStatusClass(h.status)}`}>
+            {getStatusIcon(h.status)}
+            {h.status ?? "Unknown"}
+          </td>
+          <td>
+            <span
+              className={`badge ${getBadgeClass(h.aiPrediction ?? getAIPrediction(h.status))}`}
+            >
+              🧠 {h.aiPrediction ?? getAIPrediction(h.status)}
+            </span>
+          </td>
+          <td>
+            {h.detectedBy?.length > 0 ? (
+              <>
+                <button
+                  className="btn btn-sm btn-outline-primary"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target={`#detected-${i}`}
+                  aria-expanded="false"
+                  aria-controls={`detected-${i}`}
+                >
+                  View ({h.detectedBy.length})
+                </button>
+                <div className="collapse mt-2" id={`detected-${i}`}>
+                  <ul className="mb-0 ps-3">
+                    {h.detectedBy.map((engine, idx) => (
+                      <li key={idx}>{engine}</li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            ) : (
+              "LocalDB"
+            )}
+          </td>
+          <td className="text-nowrap">{new Date(h.date).toLocaleString()}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
 
-
-                      <td>{h.input}</td>
-                      <td className="text-capitalize">{inputType(h.input)}</td>
-                      <td className={`d-flex align-items-center ${getStatusClass(h.status)}`}>
-                        {getStatusIcon(h.status)}
-                        {h.status ?? "Unknown"}
-                      </td>
-                      <td>
-                        <span className={`badge ${getBadgeClass(h.aiPrediction ?? getAIPrediction(h.status))}`}>
-                          🧠 {h.aiPrediction ?? getAIPrediction(h.status)}
-                        </span>
-                      </td>
-                      <td>
-                        {h.detectedBy?.length > 0 ? (
-                          <ul className="mb-0 ps-3">
-                            {h.detectedBy.map((engine, idx) => (
-                              <li key={idx}>{engine}</li>
-                            ))}
-                          </ul>
-                        ) : "LocalDB"}
-                      </td>
-                      <td className="text-nowrap">{new Date(h.date).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
           )}
         </div>
       </div>
