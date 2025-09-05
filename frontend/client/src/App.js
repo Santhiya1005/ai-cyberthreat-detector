@@ -6,8 +6,8 @@ import {
   Shield,
   ShieldX,
   History,
-  Loader2,
 } from "lucide-react";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 // Regex validators
 const urlRegex = /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i;
@@ -22,6 +22,15 @@ const inputType = (value) => {
   if (hashRegex.test(value)) return "hash";
   if (ipRegex.test(value)) return "ip";
   return "invalid";
+};
+
+const getAIPrediction = (status) => {
+  if (!status) return "N/A";
+  const s = status.toLowerCase();
+  if (s.includes("high") || s.includes("malicious") || s.includes("danger"))
+    return "Malware";
+  if (s.includes("suspicious")) return "Phishing";
+  return "Benign";
 };
 
 export default function CyberThreatDetector() {
@@ -58,7 +67,6 @@ export default function CyberThreatDetector() {
       const res = await axios.post("http://127.0.0.1:4000/api/scan", {
         input: scannedInput,
       });
-
       const data = res.data;
       setResult(data);
       await fetchHistory();
@@ -71,151 +79,173 @@ export default function CyberThreatDetector() {
     }
   };
 
-  const getStatusStyle = (status) => {
-    if (!status) return "text-gray-600 font-bold";
+  const getStatusClass = (status) => {
+    if (!status) return "text-secondary fw-bold";
     const s = status.toLowerCase();
-    if (s.includes("malicious") || s.includes("high")) return "text-red-600 font-bold";
-    if (s.includes("suspicious")) return "text-yellow-600 font-bold";
-    if (s.includes("benign") || s.includes("no")) return "text-green-600 font-bold";
-    return "text-gray-600 font-bold";
+    if (s.includes("malicious") || s.includes("high") || s.includes("danger"))
+      return "text-danger fw-bold";
+    if (s.includes("suspicious")) return "text-warning fw-bold";
+    if (s.includes("benign") || s.includes("no")) return "text-success fw-bold";
+    return "text-secondary fw-bold";
   };
 
   const getStatusIcon = (status) => {
-    if (!status) return <ShieldAlert className="w-6 h-6 text-gray-400" />;
+    if (!status) return <ShieldAlert className="me-2" />;
     const s = status.toLowerCase();
-    if (s.includes("malicious") || s.includes("high")) return <ShieldX className="w-6 h-6 text-red-500" />;
-    if (s.includes("suspicious")) return <Shield className="w-6 h-6 text-yellow-500" />;
-    if (s.includes("benign") || s.includes("no")) return <ShieldCheck className="w-6 h-6 text-green-500" />;
-    return <ShieldAlert className="w-6 h-6 text-gray-400" />;
+    if (s.includes("malicious") || s.includes("high") || s.includes("danger"))
+      return <ShieldX className="text-danger me-2" />;
+    if (s.includes("suspicious")) return <Shield className="text-warning me-2" />;
+    if (s.includes("benign") || s.includes("no")) return <ShieldCheck className="text-success me-2" />;
+    return <ShieldAlert className="me-2" />;
+  };
+
+  const getBadgeClass = (prediction) => {
+    const p = (prediction ?? "").toLowerCase();
+    if (p === "malware") return "bg-danger";
+    if (p === "phishing") return "bg-warning text-dark";
+    if (p === "benign") return "bg-success";
+    return "bg-secondary";
   };
 
   return (
-    <div className="min-h-screen w-full bg-pink-100 flex flex-col items-center p-6 text-gray-900">
-      <h1 className="text-4xl font-bold text-center text-pink-700 mb-8">
-        ⚡ CyberThreat Detector
-      </h1>
+    <div className="container py-5 bg-light min-vh-100">
+      <h1 className="text-center text-danger mb-5 fw-bold">⚡ CyberThreat Detector</h1>
 
       {/* Input */}
-      <div className="w-full max-w-2xl bg-white shadow-lg rounded-xl p-6 mb-6">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            disabled={loading}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleScan()}
-            placeholder="Enter URL, IP, or file hash..."
-            className="flex-1 p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-400"
-          />
-          <button
-            onClick={handleScan}
-            disabled={loading || !validateInput(input.trim())}
-            className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-500 disabled:bg-gray-400 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Scanning...
-              </>
-            ) : (
-              "Scan"
-            )}
-          </button>
+      <div className="card mb-4 shadow-sm">
+        <div className="card-body">
+          <div className="input-group">
+            <input
+              type="text"
+              value={input}
+              disabled={loading}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleScan()}
+              className="form-control"
+              placeholder="Enter URL, IP, or file hash..."
+            />
+            <button
+              className="btn btn-danger"
+              disabled={loading || !validateInput(input.trim())}
+              onClick={handleScan}
+            >
+              {loading ? (
+                <div className="spinner-border spinner-border-sm me-2" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              ) : null}
+              {loading ? "Scanning..." : "Scan"}
+            </button>
+          </div>
+          {error && <div className="text-danger mt-2">{error}</div>}
         </div>
-        {error && <p className="text-red-600 mt-2">{error}</p>}
       </div>
 
       {/* Scan Result */}
       {result && (
-        <div className="w-full max-w-2xl bg-white shadow-lg rounded-xl p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4 text-center">Scan Result</h2>
-          <table className="w-full text-sm border border-gray-300 rounded-lg overflow-hidden">
-            <tbody>
-              <tr className="border-b">
-                <td className="p-3 font-semibold">Input</td>
-                <td className="p-3 break-all">{result.input}</td>
-              </tr>
-              <tr className="border-b">
-                <td className="p-3 font-semibold">Status</td>
-                <td className={`p-3 flex items-center gap-2 ${getStatusStyle(result.status)}`}>
-                  {getStatusIcon(result.status)} {result.status ?? "Unknown"}
-                </td>
-              </tr>
-              <tr className="border-b">
-                <td className="p-3 font-semibold">AI Prediction</td>
-                <td className="p-3">
-                  <span
-                    className={`px-2 py-1 rounded-full text-white font-semibold ${
-                      result.aiPrediction?.toLowerCase() === "malware"
-                        ? "bg-red-600"
-                        : result.aiPrediction?.toLowerCase() === "phishing"
-                        ? "bg-yellow-500"
-                        : "bg-green-600"
-                    }`}
-                  >
-                    🧠 {result.aiPrediction ?? "Unknown"}
-                  </span>
-                </td>
-              </tr>
-              <tr>
-                <td className="p-3 font-semibold">Detected By</td>
-                <td className="p-3 flex flex-wrap gap-2">
-                  {result.detectedBy?.length > 0 ? (
-                    [...new Set(result.detectedBy)].map((engine, i) => (
-                      <span
-                        key={i}
-                        className="bg-pink-100 text-pink-700 px-2 py-1 rounded-full text-xs font-semibold"
-                        title={`Detected by ${engine}`}
-                      >
-                        {engine}
+        <div className="card mb-4 shadow-sm">
+          <div className="card-body">
+            <h5 className="card-title text-center mb-4 fw-bold">Scan Result</h5>
+            <div className="table-responsive">
+              <table className="table table-bordered table-hover align-middle">
+                <tbody>
+                  <tr>
+                    <td className="fw-bold">Input</td>
+                    <td>{result.input}</td>
+                  </tr>
+                  <tr>
+                    <td className="fw-bold">Status</td>
+                    <td className={`d-flex align-items-center ${getStatusClass(result.status)}`}>
+                      {getStatusIcon(result.status)}
+                      {result.status ?? "Unknown"}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="fw-bold">AI Prediction</td>
+                    <td>
+                      <span className={`badge ${getBadgeClass(result.aiPrediction ?? getAIPrediction(result.status))}`}>
+                        🧠 {result.aiPrediction ?? getAIPrediction(result.status)}
                       </span>
-                    ))
-                  ) : (
-                    "None"
-                  )}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="fw-bold">Detected By</td>
+                    <td>
+                      {result.detectedBy?.length > 0 ? (
+                        <ul className="mb-0 ps-3">
+                          {[...new Set(result.detectedBy)].sort().map((engine, i) => (
+                            <li key={i}>{engine}</li>
+                          ))}
+                        </ul>
+                      ) : "LocalDB"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
       {/* History */}
-      <div className="w-full max-w-2xl bg-white shadow-lg rounded-xl p-6">
-        <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
-          <History className="w-5 h-5 text-pink-600" /> Recent Scans
-        </h2>
-        {history.length === 0 ? (
-          <p className="text-gray-500">No history found</p>
-        ) : (
-          <table className="w-full text-sm border border-gray-300 rounded-lg overflow-hidden">
-            <thead className="bg-pink-200 text-gray-900">
-              <tr>
-                <th className="p-2 text-left">Input</th>
-                <th className="p-2 text-left">Type</th>
-                <th className="p-2 text-left">Status</th>
-                <th className="p-2 text-left">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.map((h, i) => (
-                <tr
-                  key={i}
-                  onClick={() => setResult(h)}
-                  className="border-t hover:bg-pink-50 cursor-pointer"
-                >
-                  <td className="p-2 break-all">{h.input}</td>
-                  <td className="p-2 capitalize">{inputType(h.input)}</td>
-                  <td className={`p-2 ${getStatusStyle(h.status)}`}>
-                    {h.status ?? "Unknown"}
-                  </td>
-                  <td className="p-2 text-xs">
-                    {new Date(h.date).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      <div className="card shadow-sm">
+        <div className="card-body">
+          <h5 className="card-title mb-3 fw-bold">
+            <History className="me-2 text-danger" /> Recent Scans
+          </h5>
+          {history.length === 0 ? (
+            <p className="text-secondary">No history found</p>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-bordered table-hover align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>Input</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>AI Prediction</th>
+                    <th>Detected By</th>
+                    <th>Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map((h, i) => (
+                   <tr
+  key={i}
+  onClick={() => setResult(h)}
+  className={`${i % 2 === 0 ? "bg-light" : ""} ${result?.input === h.input ? "table-active" : ""}`}
+  style={{ cursor: "pointer" }}
+>
+
+
+                      <td>{h.input}</td>
+                      <td className="text-capitalize">{inputType(h.input)}</td>
+                      <td className={`d-flex align-items-center ${getStatusClass(h.status)}`}>
+                        {getStatusIcon(h.status)}
+                        {h.status ?? "Unknown"}
+                      </td>
+                      <td>
+                        <span className={`badge ${getBadgeClass(h.aiPrediction ?? getAIPrediction(h.status))}`}>
+                          🧠 {h.aiPrediction ?? getAIPrediction(h.status)}
+                        </span>
+                      </td>
+                      <td>
+                        {h.detectedBy?.length > 0 ? (
+                          <ul className="mb-0 ps-3">
+                            {h.detectedBy.map((engine, idx) => (
+                              <li key={idx}>{engine}</li>
+                            ))}
+                          </ul>
+                        ) : "LocalDB"}
+                      </td>
+                      <td className="text-nowrap">{new Date(h.date).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

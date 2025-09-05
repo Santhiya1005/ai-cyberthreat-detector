@@ -1,3 +1,7 @@
+.table-hover tr.table-active {
+  background-color: #d6d6d6 !important; /* darker gray */
+}
+
 .App {
   text-align: center;
 }
@@ -35,4 +39,28 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ================= Table Fixes ================= */
+table th, table td {
+  vertical-align: top; /* Align content to the top */
+  padding: 8px 12px;   /* Consistent spacing */
+}
+
+table td ul {
+  margin: 0;           /* Remove default margin for bullets */
+  padding-left: 20px;  /* Proper indentation */
+}
+
+table td:empty::before {
+  content: "\00a0";    /* Keep empty cells from collapsing */
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table th, table td {
+  border: 1px solid #ddd; /* Optional: add table borders */
 }
