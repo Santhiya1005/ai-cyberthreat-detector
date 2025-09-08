@@ -1,0 +1,254 @@
+/* =========================
+   Video Background
+========================= */
+.video-background {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.video-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+  filter: brightness(0.25);
+}
+
+/* =========================
+   Overlay Content
+========================= */
+.overlay-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 60px 20px;
+  font-family: "Courier New", monospace;
+  gap: 40px;
+  color: #e0f7f4;
+  text-align: left;
+}
+
+/* Titles */
+.cyber-title {
+  font-size: 3rem;
+  color: #00d1b2;
+  font-weight: bold;
+  margin-bottom: 25px;
+}
+
+.cyber-subtitle {
+  font-size: 1.5rem;
+  color: #a0f0e0;
+  font-weight: bold;
+  margin-bottom: 35px;
+  text-shadow: 0 0 4px #a0f0e0, 0 0 8px #a0f0e0;
+}
+
+@media (max-width: 1200px) {
+  .cyber-title { font-size: 2.5rem; }
+  .cyber-subtitle { font-size: 1.2rem; }
+}
+
+/* =========================
+   Main Container
+========================= */
+.container {
+  width: 100%;
+  max-width: 1200px; /* MUCH WIDER */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  margin: 0 auto;
+}
+
+/* =========================
+   Input + Scan Button
+========================= */
+.input-button-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  width: 100%;
+}
+
+.cyber-input {
+  flex: 1;
+  background-color: white;
+  color: black;
+  border: 2px solid #00d1b2;
+  padding: 14px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  text-align: center;
+  transition: 0.3s;
+  margin-left: 10px;
+}
+
+.cyber-input:focus,
+.cyber-input:hover {
+  background-color: rgba(20, 20, 20, 0.089);
+  box-shadow: 0 0 10px #00d1b2;
+  color: rgb(223, 222, 222);
+}
+
+.btn-cyber {
+  flex: 0 0 220px; /* wider button */
+  background-color: rgba(0, 209, 178, 0.2);
+  color: #00d1b2;
+  border: 1px solid #00d1b2;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-cyber:hover {
+  background-color: rgba(20, 20, 20, 0.089);
+  transform: translateY(-2px);
+}
+
+/* =========================
+   Buttons Row (Logout + Clear)
+========================= */
+.btn-row {
+  display: flex;
+  justify-content: center;
+  gap: 40px; /* more gap */
+  width: 100%;
+  margin: 20px 0;
+}
+
+.logout-btn,
+.clear-btn {
+  flex: 0 0 250px; /* bigger buttons */
+  padding: 18px 0;
+  border-radius: 8px;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: #00d1b2;
+  transition: 0.3s;
+}
+
+.logout-btn {
+  background-color: rgba(244, 67, 54, 0.25);
+}
+
+.clear-btn {
+  background-color: rgba(33, 150, 243, 0.25);
+}
+
+.logout-btn:hover {
+  background-color: rgba(20, 20, 20, 0.089);
+}
+
+.clear-btn:hover {
+  background-color: rgba(20, 20, 20, 0.089);
+}
+
+/* =========================
+   Table & Scan Cards
+========================= */
+.table-cyber,
+.cyber-card {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 40px auto;
+}
+
+.table-cyber {
+  border-collapse: separate; /* important for border-radius to work */
+  border-spacing: 0;         /* remove gaps between cells */
+  border: 1px solid #00d1b2;
+  border-radius: 20px;       /* adjust this value for corner size */
+  overflow: hidden;          /* clips the corners */
+}
+
+.table-cyber th,
+.table-cyber td {
+  border: 1px solid #00d1b2;
+  padding: 16px 22px;
+  text-align: center;
+  overflow-wrap: break-word;
+  background-color: rgba(20, 20, 20, 0.1);
+}
+
+.table-cyber th {
+  background-color: rgba(30, 30, 30, 0.85);
+}
+
+.table-cyber tr:hover {
+  background-color: rgba(20, 20, 20, 0.089);
+  transition: 0.3s;
+}
+
+/* Remove nested table issue */
+.table-cyber tr.selected {
+  display: none;
+}
+
+/* =========================
+   Scan Result Card
+========================= */
+.cyber-card {
+  border: 1px solid #00d1b2;
+  background-color: rgba(20, 20, 20, 0.85);
+  color: #e0f7f4;
+  padding: 35px;
+  border-radius: 14px;
+  margin-top: 30px;
+  width: 100%;
+  max-width: 1100px;
+  text-align: left;
+  font-size: 1.1rem;
+  overflow-x: auto;
+}
+
+.cyber-card:hover {
+  transform: translateY(-4px);
+  transition: 0.5s;
+  box-shadow: 0 0 18px #00d1b2, 0 0 35px #00d1b2;
+  background-color: rgba(20, 20, 20, 0.089);
+  cursor: pointer;
+}
+
+
+
+/* =========================
+   Links
+========================= */
+a {
+  color: #00d1b2;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* =========================
+   Scrollbar customization
+========================= */
+.cyber-card::-webkit-scrollbar {
+  height: 6px;
+}
+
+.cyber-card::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.cyber-card::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
